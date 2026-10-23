@@ -21,6 +21,7 @@
 > 1. `.githooks/pre-commit` checks the pending author and committer identity.
 > 2. `.githooks/commit-msg` checks identity, forbidden trailers/signatures and the Conventional Commits format.
 > 3. `.githooks/pre-push` audits every outgoing commit, including ones made with `--no-verify`.
+> 4. The CI `attribution-audit` job re-checks every pushed or pull-request commit.
 
 ## Setup
 
@@ -42,7 +43,8 @@ git config --local user.name  mikeZ98
 git config --local user.email 145975972+mikeZ98@users.noreply.github.com
 ```
 
-If you don't use direnv, run those three commands by hand.
+If you don't use direnv, run those three commands by hand. The test suite is
+hermetic: it blocks real network access and needs no running gateway.
 
 Secrets go in `.env` (git-ignored, auto-loaded by direnv).
 
@@ -51,9 +53,10 @@ Secrets go in `.env` (git-ignored, auto-loaded by direnv).
 ```sh
 uv run ruff check .
 uv run ruff format --check .
-uv run mypy
-uv run bandit -c pyproject.toml -r src
-uv run pytest --cov --cov-report=term-missing   # >= 90% branch coverage, no live API calls
+uv run mypy --strict src/ tests/
+uv run bandit -c pyproject.toml -r src/
+uv run pytest --cov=agent_swarm_tui --cov-branch --cov-report=term-missing --cov-fail-under=90
+uv tool run --from hadolint-bin==2.15.1 hadolint --failure-threshold info Dockerfile
 ```
 
 ## Commits
