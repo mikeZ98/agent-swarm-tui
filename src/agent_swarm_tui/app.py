@@ -429,7 +429,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _configure_logging(log_file: str | None, level: str) -> None:
-    # Never let records reach stderr: that would corrupt the terminal UI.
+    # While the app runs, TextualHandler routes records through it (devtools console),
+    # never onto the terminal UI; only with no active app (before start, after exit)
+    # does it fall back to stderr, when the terminal is not in use.
     handler: logging.Handler = (
         logging.FileHandler(log_file, encoding="utf-8") if log_file else TextualHandler()
     )

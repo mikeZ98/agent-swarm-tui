@@ -105,7 +105,7 @@ class MessageRouter:
                 return () if sender_id == self._hub or self._hub is None else (self._hub,)
             case RoutingStrategy.MESH:
                 return ()
-            case _:
+            case _:  # pragma: no cover - exhaustive over RoutingStrategy
                 assert_never(strategy)
 
     def recipients(self, message: SwarmMessage) -> tuple[UUID, ...]:
@@ -190,7 +190,7 @@ class MessageRouter:
                     )
             case RoutingStrategy.MESH:
                 pass
-            case _:
+            case _:  # pragma: no cover - exhaustive over RoutingStrategy
                 assert_never(strategy)
 
     def _require_agent(self, agent_id: UUID) -> None:

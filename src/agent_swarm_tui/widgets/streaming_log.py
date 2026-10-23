@@ -91,7 +91,6 @@ class StreamingLog(Widget):
         self._last_thought: dict[UUID, str] = {}
         self._names: dict[UUID, str] = {}
         self._roles: dict[UUID, AgentRole] = {}
-        self._swarm_id: UUID | None = None
         self._focus: UUID | None = None
         self._live_dirty = False
 
@@ -113,8 +112,7 @@ class StreamingLog(Widget):
         return self._focus
 
     def load_topology(self, topology: SwarmTopology) -> None:
-        """Learn agent names/roles (for labels) and the swarm's runtime id."""
-        self._swarm_id = topology.swarm_id
+        """Learn agent names and roles for labels."""
         self._names = {agent.id: agent.name for agent in topology.agents}
         self._roles = {agent.id: agent.role for agent in topology.agents}
 
@@ -263,8 +261,6 @@ class StreamingLog(Widget):
         return Rule(title, align="left", style="dim")
 
     def _agent_name(self, agent_id: UUID) -> str:
-        if agent_id == self._swarm_id:
-            return "swarm"
         return self._names.get(agent_id, str(agent_id)[:8])
 
     def _agent_style(self, agent_id: UUID) -> str:
