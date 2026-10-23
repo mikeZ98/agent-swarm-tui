@@ -36,7 +36,10 @@
   pytest, coverage, pycache, XDG dirs and `TMPDIR`. Never create `.venv/` or write
   caches elsewhere.
 - Docker state stays on the SSD: `COLIMA_HOME=/Volumes/KINGSTONE_SSD/.colima`,
-  buildx config in `./.cache/buildx`.
+  buildx config in `./.cache/buildx`. Colima silently ignores `COLIMA_HOME` unless
+  that directory exists (`.envrc` creates it), and caches VM images under
+  `$XDG_CACHE_HOME`; start it only from a direnv shell. Never use Docker Desktop
+  (its VM disk is on the internal drive).
 - Run tools via `uv run …` (or the venv on `PATH` under direnv). Python 3.13.
 - Secrets only in `.env` (git-ignored). Never commit keys.
 
