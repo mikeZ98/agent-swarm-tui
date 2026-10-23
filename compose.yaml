@@ -1,0 +1,47 @@
+# Run the TUI in a container against ai-inference-gateway (Repo 01).
+#
+#   1. Start the gateway stack from its own repository:
+#        (cd ../ai-inference-gateway && docker compose up -d)
+#   2. Run the TUI interactively (pseudo-TTY, stdin attached):
+#        docker compose run --rm tui
+#        docker compose run --rm tui --topology hierarchical --task "Design a cache"
+#
+# The TUI joins the gateway stack's network and reaches it by service name
+# (`gateway:8000`). Override GATEWAY_BASE_URL / GATEWAY_NETWORK for other setups.
+# Arguments after `tui` replace the default `--log-file /tmp/agent-swarm-tui.log`.
+
+name: agent-swarm-tui
+
+services:
+  tui:
+    build:
+      context: .
+      target: runner
+    image: agent-swarm-tui:local
+    # Interactive terminal UI: keep stdin open and allocate a TTY.
+    stdin_open: true
+    tty: true
+    # tini as PID 1: forwards signals and reaps children.
+    init: true
+    environment:
+      GATEWAY_BASE_URL: ${GATEWAY_BASE_URL:-http://gateway:8000}
+      # Pass the host terminal's colour support through (e.g. COLORTERM=truecolor).
+      COLORTERM: ${COLORTERM:-}
+    networks:
+      - gateway
+    # Hardening: immutable rootfs, scratch tmpfs, no capabilities, no privilege escalation.
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777,noexec,nosuid,nodev
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 256m
+
+networks:
+  gateway:
+    # Created by `docker compose up` in ai-inference-gateway (project name + "_default").
+    name: ${GATEWAY_NETWORK:-ai-inference-gateway_default}
+    external: true
