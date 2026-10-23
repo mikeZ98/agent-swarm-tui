@@ -380,8 +380,15 @@ class SwarmOrchestrator:
 
     def _fail(self, agent_id: UUID, exc: Exception) -> None:
         self._set_state(transition(self._states[agent_id], AgentStatus.ERROR))
-        detail = f"{type(exc).__name__}: {exc}"
-        self._emit(AgentFailed(agent_id=agent_id, error=detail[:MAX_ERROR_CHARS]))
+        error_type = type(exc).__name__
+        self._emit(
+            AgentFailed(
+                agent_id=agent_id,
+                error=(str(exc) or error_type)[:MAX_ERROR_CHARS],
+                error_type=error_type,
+                retryable=getattr(exc, "retryable", False) is True,
+            )
+        )
 
     def _terminate_all(self) -> None:
         for state in tuple(self._states.values()):

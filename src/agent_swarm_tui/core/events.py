@@ -34,11 +34,20 @@ class TaskCompleted(StrictModel):
 
 
 class AgentFailed(StrictModel):
-    """An agent's runner or forwarding step failed; the agent is now ``ERROR``."""
+    """An agent's runner or forwarding step failed; the agent is now ``ERROR``.
+
+    ``error_type`` is the exception class name (for classification without
+    parsing ``error``); ``retryable`` mirrors the exception's ``retryable``
+    attribute when it has one (gateway client errors do).
+    """
 
     kind: Literal["agent_failed"] = "agent_failed"
     agent_id: UUID
     error: str = Field(min_length=1, max_length=MAX_ERROR_CHARS)
+    error_type: str = Field(
+        default="Exception", min_length=1, max_length=128, pattern=r"^[A-Za-z_][A-Za-z0-9_]*$"
+    )
+    retryable: bool = False
 
 
 type SwarmEvent = AgentUpdated | MessageRouted | TaskCompleted | AgentFailed
