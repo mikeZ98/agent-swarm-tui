@@ -17,7 +17,17 @@
 
 - Conventional Commits, atomic and logical, one commit per blueprint step.
   Commit only when asked.
-- Step 1 is `chore(init)`; follow the 10-step blueprint protocol for the rest.
+- Blueprint protocol (Repo 02/20), in order:
+  1. `chore(init)`: bootstrap repository architecture and environment
+  2. `feat(schemas)`: define strict Pydantic domain models and state contracts
+  3. `feat(core)`: implement asyncio swarm orchestration and agent state machine
+  4. `feat(gateway-client)`: implement async client for ai-inference-gateway SSE
+  5. `feat(tui-widgets)`: create Textual UI components (agent tree, log stream, token tracker)
+  6. `feat(tui-app)`: build reactive Textual application and keyboard controls
+  7. `test(core)`: achieve >=90% branch coverage with hermetic pytest and textual pilot
+  8. `build(docker)`: containerize application logic with non-root user
+  9. `ci(github)`: setup automated linting, tests and supply-chain pinned CI
+  10. `docs(readme)`: add mermaid architecture diagrams and usage guide
 
 ## Environment & storage hygiene
 
