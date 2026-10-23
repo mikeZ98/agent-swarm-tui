@@ -18,7 +18,7 @@ from agent_swarm_tui.core.orchestrator import (
     SwarmListener,
     SwarmOrchestrator,
 )
-from agent_swarm_tui.core.ports import AgentReply, AgentRunner
+from agent_swarm_tui.core.ports import AgentReply, AgentRunner, StatusAwareRunner, StatusHook
 from agent_swarm_tui.core.router import DEFAULT_MAILBOX_SIZE, MessageRouter
 from agent_swarm_tui.core.state_machine import (
     TRANSITIONS,
@@ -40,6 +40,8 @@ __all__ = [
     "MessageRouted",
     "MessageRouter",
     "RoutingError",
+    "StatusAwareRunner",
+    "StatusHook",
     "SwarmError",
     "SwarmEvent",
     "SwarmListener",

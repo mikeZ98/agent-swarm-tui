@@ -1,6 +1,7 @@
 """Interfaces the orchestrator depends on; concrete agent runners live outside ``core``."""
 
-from typing import Protocol, Self
+from collections.abc import Callable
+from typing import Protocol, Self, runtime_checkable
 from uuid import UUID
 
 from pydantic import Field, model_validator
@@ -9,9 +10,13 @@ from agent_swarm_tui.schemas import (
     MAX_AGENTS,
     MAX_PAYLOAD_CHARS,
     AgentState,
+    AgentStatus,
     StrictModel,
     SwarmMessage,
 )
+
+type StatusHook = Callable[[UUID, AgentStatus], None]
+"""Moves an agent between ``RUNNING`` and ``WAITING`` while its message is in flight."""
 
 
 class AgentReply(StrictModel):
@@ -52,4 +57,18 @@ class AgentRunner(Protocol):
 
     async def run(self, agent: AgentState, message: SwarmMessage) -> AgentReply:
         """Handle ``message`` as ``agent`` (whose status is ``RUNNING``)."""
+        ...
+
+
+@runtime_checkable
+class StatusAwareRunner(Protocol):
+    """Optional runner capability: report ``WAITING`` / ``RUNNING`` mid-message.
+
+    ``SwarmOrchestrator`` binds its ``signal_status`` automatically to any
+    runner that implements this. The hook raises ``SwarmError`` subclasses
+    when the agent is not currently handling a message.
+    """
+
+    def bind_status_hook(self, hook: StatusHook) -> None:
+        """Receive the hook used to signal status changes."""
         ...

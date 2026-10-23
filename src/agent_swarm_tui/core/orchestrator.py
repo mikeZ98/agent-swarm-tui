@@ -17,7 +17,12 @@ from types import TracebackType
 from typing import Final, Self
 from uuid import UUID
 
-from agent_swarm_tui.core.errors import AgentNotFoundError, RoutingError, SwarmError
+from agent_swarm_tui.core.errors import (
+    AgentNotFoundError,
+    InvalidStateTransitionError,
+    RoutingError,
+    SwarmError,
+)
 from agent_swarm_tui.core.events import (
     MAX_ERROR_CHARS,
     AgentFailed,
@@ -26,7 +31,7 @@ from agent_swarm_tui.core.events import (
     SwarmEvent,
     TaskCompleted,
 )
-from agent_swarm_tui.core.ports import AgentReply, AgentRunner
+from agent_swarm_tui.core.ports import AgentReply, AgentRunner, StatusAwareRunner
 from agent_swarm_tui.core.router import DEFAULT_MAILBOX_SIZE, MessageRouter
 from agent_swarm_tui.core.state_machine import can_transition, record_usage, transition
 from agent_swarm_tui.schemas import (
@@ -103,6 +108,8 @@ class SwarmOrchestrator:
         self._quiescent.set()
         self._phase = _Phase.NEW
         self._supervisor: asyncio.Task[None] | None = None
+        if isinstance(runner, StatusAwareRunner):
+            runner.bind_status_hook(self.signal_status)
 
     # --- Introspection -------------------------------------------------------
 
@@ -232,6 +239,24 @@ class SwarmOrchestrator:
         self._deliver((message,))
         return message
 
+    def signal_status(self, agent_id: UUID, status: AgentStatus) -> None:
+        """Toggle an agent that is handling a message between ``RUNNING`` and ``WAITING``.
+
+        Idempotent for the current status. Raises ``AgentNotFoundError`` for an
+        unknown agent and ``InvalidStateTransitionError`` for any other status
+        change (lifecycle transitions belong to the orchestrator).
+        """
+        state = self.agent(agent_id)
+        if state.status not in _ACTIVE or status not in _ACTIVE:
+            raise InvalidStateTransitionError(
+                agent_id,
+                state.status,
+                status,
+                reason="runners may only toggle between running and waiting",
+            )
+        if state.status is not status:
+            self._set_state(transition(state, status))
+
     async def _supervise(self) -> None:
         async with asyncio.TaskGroup() as group:
             for agent in self._topology.agents:
@@ -268,9 +293,10 @@ class SwarmOrchestrator:
             return
         self._processed += 1
         latency_ms = max(0.0, (self._clock() - started) * 1000.0)
-        self._set_state(
-            record_usage(self._states[agent_id], tokens=reply.tokens_used, latency_ms=latency_ms)
-        )
+        state = self._states[agent_id]
+        if state.status is AgentStatus.WAITING:  # runner returned without resuming
+            state = transition(state, AgentStatus.RUNNING)
+        self._set_state(record_usage(state, tokens=reply.tokens_used, latency_ms=latency_ms))
         try:
             self._forward(agent_id, reply)
         except SwarmError as exc:
