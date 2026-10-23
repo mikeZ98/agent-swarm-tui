@@ -108,6 +108,9 @@ class SwarmOrchestrator:
         self._quiescent.set()
         self._phase = _Phase.NEW
         self._supervisor: asyncio.Task[None] | None = None
+        self._abort = asyncio.Event()
+        self._stopped = asyncio.Event()
+        self._drained = True
         if isinstance(runner, StatusAwareRunner):
             runner.bind_status_hook(self.signal_status)
 
@@ -126,6 +129,11 @@ class SwarmOrchestrator:
             and self._supervisor is not None
             and not self._supervisor.done()
         )
+
+    @property
+    def entry_point(self) -> UUID:
+        """Agent that ``dispatch_task`` targets by default."""
+        return self._router.entry_point
 
     @property
     def agents(self) -> tuple[AgentState, ...]:
@@ -179,30 +187,51 @@ class SwarmOrchestrator:
         from the moment this is called. Anything left after the timeout, or
         everything when ``drain=False``, is cancelled.
 
+        Safe to call concurrently: a later call waits for the first to finish
+        (a later ``drain=False`` call also aborts the first call's drain) and
+        returns its result, so every caller returns only once no agent task
+        is left running.
+
         Raises ``SwarmError`` if an agent loop crashed while running.
         """
         supervisor = self._supervisor
-        if self._phase is not _Phase.RUNNING or supervisor is None:
+        if supervisor is None:  # never started
             self._phase = _Phase.STOPPED
             return True
+        if self._phase is not _Phase.RUNNING:  # a stop is already in progress or done
+            if not drain:
+                self.abort_drain()
+            await self._stopped.wait()
+            await asyncio.wait((supervisor,))
+            self._terminate_all()
+            return self._drained
         self._phase = _Phase.STOPPED
         drained = False
         try:
-            if drain:
-                drained = await self._await_quiescence(supervisor, drain_timeout)
+            try:
+                if drain:
+                    drained = await self._await_quiescence(supervisor, drain_timeout)
+                    if not drained:
+                        logger.warning(
+                            "swarm %r did not drain (timeout or abort); cancelling",
+                            self._topology.name,
+                        )
+            finally:
+                self._router.shutdown(immediate=not drained)
                 if not drained:
-                    logger.warning(
-                        "swarm %r did not drain in time; cancelling", self._topology.name
-                    )
+                    supervisor.cancel()
+            await asyncio.wait((supervisor,))
+            self._terminate_all()
         finally:
-            self._router.shutdown(immediate=not drained)
-            if not drained:
-                supervisor.cancel()
-        await asyncio.wait((supervisor,))
-        self._terminate_all()
+            self._drained = drained
+            self._stopped.set()
         if not supervisor.cancelled() and (crash := supervisor.exception()) is not None:
             raise SwarmError(f"swarm {self._topology.name!r} crashed") from crash
         return drained
+
+    def abort_drain(self) -> None:
+        """Cut an in-progress (or upcoming) drain short: ``stop_swarm`` cancels what is left."""
+        self._abort.set()
 
     async def __aenter__(self) -> Self:
         """Start the swarm."""
@@ -364,13 +393,19 @@ class SwarmOrchestrator:
     ) -> bool:
         if self._quiescent.is_set():
             return True
+        if self._abort.is_set():
+            return False
         waiter = asyncio.create_task(self._quiescent.wait())
+        aborter = asyncio.create_task(self._abort.wait())
         try:
             await asyncio.wait(
-                (waiter, supervisor), timeout=drain_timeout, return_when=asyncio.FIRST_COMPLETED
+                (waiter, aborter, supervisor),
+                timeout=drain_timeout,
+                return_when=asyncio.FIRST_COMPLETED,
             )
         finally:
             waiter.cancel()
+            aborter.cancel()
         return self._quiescent.is_set()
 
     def _set_state(self, state: AgentState) -> AgentState:

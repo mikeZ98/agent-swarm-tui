@@ -71,8 +71,7 @@ class StreamingLog(Widget):
     """
 
     BINDINGS: ClassVar[list[BindingType]] = [
-        Binding("s", "toggle_auto_scroll", "Scroll lock"),
-        Binding("c", "clear_log", "Clear log", show=False),
+        Binding("s", "toggle_auto_scroll", "Scroll lock", show=False),
     ]
 
     auto_scroll: var[bool] = var(default=True)

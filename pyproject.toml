@@ -13,6 +13,9 @@ dependencies = [
     "rich>=14",
 ]
 
+[project.scripts]
+agent-swarm-tui = "agent_swarm_tui.app:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8.3",

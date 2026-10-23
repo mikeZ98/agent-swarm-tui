@@ -11,6 +11,7 @@ from agent_swarm_tui.widgets.alerts import (
     alert_line,
     categorize,
 )
+from agent_swarm_tui.widgets.dispatch_dialog import DispatchDialog, DispatchRequest
 from agent_swarm_tui.widgets.streaming_log import StreamingLog
 from agent_swarm_tui.widgets.token_tracker import TokenTracker, headroom_bar
 
@@ -20,6 +21,8 @@ __all__ = [
     "AlertCategory",
     "AlertSeverity",
     "AlertsPanel",
+    "DispatchDialog",
+    "DispatchRequest",
     "StreamingLog",
     "TokenTracker",
     "agent_label",
