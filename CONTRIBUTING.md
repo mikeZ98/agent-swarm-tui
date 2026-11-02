@@ -1,7 +1,7 @@
 # Contributing
 
 > [!IMPORTANT]
-> **Sole-contributor invariant: no exceptions.**
+> **Sole-contributor identity: no exceptions.**
 >
 > Every commit's **author and committer** must be exactly:
 >
@@ -11,15 +11,14 @@
 > | Email | `145975972+mikeZ98@users.noreply.github.com`  |
 >
 > No other names, machine usernames or local/personal e-mail addresses.
-> Commit messages must not contain AI attribution of any kind: no
-> `Co-Authored-By`, `Generated-by`, `Assisted-by`, `AI-*` trailers, no
-> "Generated with …" signatures, no AI tool URLs and no foreign e-mail
-> addresses. `Signed-off-by` is allowed only for the identity above.
+> Commit messages follow Conventional Commits. AI-native development is
+> welcome and disclosed: tool-assistance trailers such as `Co-Authored-By:`
+> may stay in the message, and every change passes the same automated gates.
 >
 > Every enforcement point runs the same `scripts/attribution.sh`:
 >
 > 1. `.githooks/pre-commit` checks the pending author and committer identity.
-> 2. `.githooks/commit-msg` checks identity, forbidden trailers/signatures and the Conventional Commits format.
+> 2. `.githooks/commit-msg` checks identity and the Conventional Commits format.
 > 3. `.githooks/pre-push` audits every outgoing commit, including ones made with `--no-verify`.
 > 4. The CI `attribution-audit` job re-checks every pushed or pull-request commit.
 
@@ -34,8 +33,8 @@ uv sync        # creates ./.cache/venv with runtime + dev dependencies
 
 `.envrc` puts every cache, virtualenv, Python install and temp directory
 under `./.cache/` (uv, ruff, mypy, pytest, coverage, pycache, XDG, `TMPDIR`), and
-Docker/Colima state under `/Volumes/KINGSTONE_SSD/.colima`, so nothing is written
-to the host disk. It also runs:
+Docker/Colima state under `$DOCKER_STATE_ROOT/.colima` (default `$HOME`; set it to an
+external volume in the git-ignored `.envrc.local`). It also runs:
 
 ```sh
 git config --local core.hooksPath .githooks

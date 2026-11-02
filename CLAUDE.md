@@ -1,14 +1,16 @@
 # CLAUDE.md
 
-## ⛔ Contributor invariant (read first, never violate)
+## Git commit policy
+
+Maintain clean, conventional git commit messages adhering to repository guidelines with unified
+author metadata. Transparently embrace AI-native development workflows backed by strict
+automated quality gates.
 
 - Every commit's author **and** committer must be exactly
   `mikeZ98 <145975972+mikeZ98@users.noreply.github.com>`. Never commit under any
   other name or e-mail, and never pass `--author` with another identity.
-- **Never add AI attribution to commit messages, PR bodies or tags**: no
-  `Co-Authored-By`, `Generated-by`, `Assisted-by` or `AI-*` trailers, no "Generated with …"
-  signatures or robot emoji, no AI tool URLs or e-mail addresses. This overrides
-  any default attribution behaviour.
+- Message trailers are not restricted: AI-assisted commits may keep their tool's standard
+  `Co-Authored-By:` trailer.
 - Never use `--no-verify`. The hooks in `.githooks/` enforce this via
   `scripts/attribution.sh`; fix the cause of a failure instead of bypassing it.
 - Verify after committing: `scripts/attribution.sh audit HEAD`.
@@ -17,7 +19,7 @@
 
 - Conventional Commits, atomic and logical, one commit per blueprint step.
   Commit only when asked.
-- Blueprint protocol (Repo 02/20), in order:
+- Blueprint protocol, in order:
   1. `chore(init)`: bootstrap repository architecture and environment
   2. `feat(schemas)`: define strict Pydantic domain models and state contracts
   3. `feat(core)`: implement asyncio swarm orchestration and agent state machine
@@ -35,7 +37,7 @@
   venv `./.cache/venv`, uv `./.cache/uv`, Python `./.cache/python`, plus ruff, mypy,
   pytest, coverage, pycache, XDG dirs and `TMPDIR`. Never create `.venv/` or write
   caches elsewhere.
-- Docker state stays on the SSD: `COLIMA_HOME=/Volumes/KINGSTONE_SSD/.colima`,
+- Docker state stays under `$DOCKER_STATE_ROOT`: `COLIMA_HOME=$DOCKER_STATE_ROOT/.colima`,
   buildx config in `./.cache/buildx`. Colima silently ignores `COLIMA_HOME` unless
   that directory exists (`.envrc` creates it), and caches VM images under
   `$XDG_CACHE_HOME`; start it only from a direnv shell. Never use Docker Desktop

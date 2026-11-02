@@ -1,8 +1,8 @@
 # agent-swarm-tui
 
-**AI Systems Blueprint: repository 02/20.** A real-time terminal dashboard for
+A real-time terminal dashboard for
 running a **multi-agent swarm** on top of
-[ai-inference-gateway](https://github.com/mikeZ98/ai-inference-gateway) (repository 01). You pick a
+[ai-inference-gateway](https://github.com/mikeZ98/ai-inference-gateway). You pick a
 topology, dispatch a task, and watch every agent think, hand work to its
 peers, and spend tokens, live, as the gateway streams Server-Sent Events.
 
@@ -279,8 +279,8 @@ All text from agents and models is rendered as literal text. A payload such as
 ## Core invariants
 
 - **Sole contributor:** every commit's author and committer is exactly
-  `mikeZ98 <145975972+mikeZ98@users.noreply.github.com>`, with no AI trailers
-  or signatures of any kind. `scripts/attribution.sh` enforces this in the
+  `mikeZ98 <145975972+mikeZ98@users.noreply.github.com>`. AI assistance is
+  disclosed, not hidden: tool trailers are allowed. `scripts/attribution.sh` enforces the identity in the
   `pre-commit`, `commit-msg` and `pre-push` hooks and again in CI (see
   [CONTRIBUTING.md](CONTRIBUTING.md)).
 - **Immutable domain schemas:** every model is `frozen`, `extra="forbid"` and
@@ -453,7 +453,7 @@ uv run pytest --cov=agent_swarm_tui --cov-branch --cov-report=term-missing --cov
 ```mermaid
 %%{init: {"flowchart": {"wrappingWidth": 360}}}%%
 flowchart LR
-    A["attribution-audit<br/>sole contributor<br/>no AI trailers"]
+    A["attribution-audit<br/>sole contributor identity"]
     Q["quality-gates<br/>ruff · mypy · bandit<br/>hadolint · pytest ≥ 90%"]
     C["container-scan<br/>Buildx · hardened smoke test<br/>Trivy CRITICAL/HIGH"]
     P["publish (main only)<br/>GHCR: latest<br/>sha-&lt;commit&gt;"]
